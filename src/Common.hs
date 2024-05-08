@@ -1,5 +1,5 @@
 module Common
-    ( Var, Term (..)
+    ( Var, Term (..), Judgement
     , GlobalState, LocalState, Unif
     , liftLocal, liftGlobal
     , inspect, inspectDeep
@@ -23,6 +23,8 @@ type Var = String
 data Term = Var Var
           | Term String [Term]
 
+type Judgement = Term
+
 type GlobalState = ()
 type LocalState = Map Var Term
 
@@ -44,7 +46,6 @@ liftGlobal st = do
   let !(a, s') = State.runState st s
   lift $ State.put s'
   pure a
-
 
 inspect :: Term -> Unif Term
 inspect (Term c ts) = pure (Term c ts)
