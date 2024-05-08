@@ -20,6 +20,9 @@ import Data.Map.Strict (Map)
 
 import Control.Monad.Logic (LogicT, msplit)
 
+import Control.Monad.Backtrack (Backtr)
+import Control.Monad.State.LocalGlobal (local, global)
+
 type Var = String
 data Term = Var Var
           | Term String [Term]
@@ -32,22 +35,13 @@ data LocalState = LocalState
   , metaCounter :: Int
   }
 
-type Backtr g s = StateT s (LogicT (State g))
 type Unif = Backtr GlobalState LocalState
 
 liftLocal :: State s a -> Backtr g s a
-liftLocal st = do
-  s <- State.get
-  let !(a, s') = State.runState st s
-  State.put s'
-  pure a
+liftLocal = local
 
 liftGlobal :: State g a -> Backtr g s a
-liftGlobal st = do
-  s <- lift $ State.get
-  let !(a, s') = State.runState st s
-  lift $ State.put s'
-  pure a
+liftGlobal = global
 
 getMeta :: Var -> Unif (Maybe Term)
 getMeta v = liftLocal (State.gets (Map.lookup v . subst))
