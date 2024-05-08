@@ -21,7 +21,7 @@ author:             Iain Moncrief, Christine Lin
 maintainer:         moncrief@oregonstate.edu
 
 common warnings
-    ghc-options: -Wall
+    -- ghc-options: -Wall
 
 library
     import:           warnings
@@ -36,10 +36,11 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base,
+        base ^>=4.17.2.1,
+        transformers ^>= 0.6.1.0,
         mtl,
+        logict ^>= 0.8.1.0,
         containers,
-        logict,
         logic
 
     -- Directories containing source files.
