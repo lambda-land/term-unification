@@ -43,4 +43,4 @@ unify t1 t2 = do
     replace v t = do
       -- occurs check
       guard . not =<< occurs v t
-      liftLocal (State.modify' (Map.insert v t))
+      setMeta v t

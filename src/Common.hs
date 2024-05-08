@@ -2,6 +2,7 @@ module Common
     ( Var, Term (..), Judgement
     , GlobalState, LocalState, Unif
     , liftLocal, liftGlobal
+    , setMeta
     , inspect, inspectDeep
     ) where
 
@@ -26,26 +27,36 @@ data Term = Var Var
 type Judgement = Term
 
 type GlobalState = ()
-type LocalState = Map Var Term
+data LocalState = LocalState
+  { subst :: Map Var Term
+  , metaCounter :: Int
+  }
 
-type Unif = StateT LocalState (LogicT (State GlobalState))
+type Backtr g s = StateT s (LogicT (State g))
+type Unif = Backtr GlobalState LocalState
 
-getMeta :: Var -> Unif (Maybe Term)
-getMeta v = liftLocal (State.gets (Map.lookup v))
-
-liftLocal :: State LocalState a -> Unif a
+liftLocal :: State s a -> Backtr g s a
 liftLocal st = do
   s <- State.get
   let !(a, s') = State.runState st s
   State.put s'
   pure a
 
-liftGlobal :: State GlobalState a -> Unif a
+liftGlobal :: State g a -> Backtr g s a
 liftGlobal st = do
   s <- lift $ State.get
   let !(a, s') = State.runState st s
   lift $ State.put s'
   pure a
+
+getMeta :: Var -> Unif (Maybe Term)
+getMeta v = liftLocal (State.gets (Map.lookup v . subst))
+
+setMeta :: Var -> Term -> Unif ()
+setMeta v t = liftLocal $ State.modify $ \(LocalState subst metaCounter) ->
+  if Map.member v subst
+  then error ("variable already assigned: " ++ v)
+  else LocalState (Map.insert v t subst) metaCounter
 
 inspect :: Term -> Unif Term
 inspect (Term c ts) = pure (Term c ts)
