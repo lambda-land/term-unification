@@ -4,20 +4,34 @@ module Unify
 
 import qualified Control.Monad.State.Strict as State
 
-import Control.Monad.Logic (msplit)
+import Control.Monad.Logic.Class (MonadLogic, msplit, (>>-))
 
+import Control.Applicative (empty, (<|>))
 import Control.Monad (forM_, guard)
-import qualified Data.Map.Strict as Map
 
-import Logic.Proof (Proof (..))
+import Logic.Proof (Proof (..), pattern Proof)
 
 import Common
+import Rules (Rule (..), Rules, instantiate)
 
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ []       = pure False
 anyM p (x : xs) = do c <- p x
                      if c then pure True
                           else anyM p xs
+
+interleaveMany :: MonadLogic m => [m a] -> m a
+interleaveMany = step [] where
+  step []  []       = empty
+  step ts' []       = step [] (reverse ts')
+  step ts' (t : ts) = do
+    mb <- msplit t
+    case mb of
+      Nothing      ->            step       ts'  ts
+      Just (a, t') -> pure a <|> step (t' : ts') ts
+
+choose :: MonadLogic m => [a] -> m a
+choose = interleaveMany . map pure
 
 occurs :: Var -> Term -> Unif Bool
 occurs v t = do
@@ -44,3 +58,17 @@ unify t1 t2 = do
       -- occurs check
       guard . not =<< occurs v t
       setMeta v t
+
+search :: Rules -> Judgement -> Unif (Proof Judgement)
+search rules j =
+  -- find matching rules
+  (choose rules                >>= \(_ {- name -}, rule) ->
+   instantiate rule            >>= \rule' ->
+   unify j (conclusion rule')  >>
+   pure rule')
+  -- bind with >>- because we want to try each matching rule in parallel
+                               >>- \rule' ->
+  mapM (search rules) (premises rule')
+                               >>- \premiseTrees ->
+  inspectDeep j                >>= \j' ->
+  pure (Proof j' premiseTrees)
