@@ -8,8 +8,8 @@ module Common
 
 import Control.Monad.Trans (lift)
 
-import qualified Control.Monad.State.Strict as State
-import Control.Monad.State.Strict (StateT, State)
+import qualified Control.Monad.State.Lazy as State
+import Control.Monad.State.Lazy (StateT, State)
 
 import Control.Monad.Logic (LogicT)
 
