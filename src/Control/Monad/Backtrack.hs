@@ -8,6 +8,8 @@ import Control.Monad.State.LocalGlobal
 
 type Backtr g s = StateT s (LogicT (State g))
 
+allResults :: Backtr g s a -> s -> g -> ([(a, s)], g)
+allResults bt s1 g1 = runState (observeAllT (runStateT bt s1)) g1
 
 instance LocalGlobal (Backtr g s) g s where
   global :: State g a -> Backtr g s a
