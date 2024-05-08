@@ -1,71 +1,23 @@
 module Unify
-    ( Var, Term
-    , GlobalState, LocalState, Unif
-    , liftLocal, liftGlobal
-    , inspect, inspectDeep
-    , unify
+    ( unify
     ) where
 
-import Control.Monad.Trans (lift)
-
 import qualified Control.Monad.State.Strict as State
-import Control.Monad.State.Strict (StateT, State)
 
-import Control.Monad.Logic (LogicT, msplit)
+import Control.Monad.Logic (msplit)
 
 import Control.Monad (forM_, guard)
-
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
 
 import Logic.Proof (Proof (..))
+
+import Common
 
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ []       = pure False
 anyM p (x : xs) = do c <- p x
                      if c then pure True
                           else anyM p xs
-
-type Var = String
-data Term = Var Var
-          | Term String [Term]
-
-type GlobalState = ()
-type LocalState = Map Var Term
-
-type Unif = StateT LocalState (LogicT (State GlobalState))
-
-liftLocal :: State LocalState a -> Unif a
-liftLocal st = do
-  s <- State.get
-  let !(a, s') = State.runState st s
-  State.put s'
-  pure a
-
-liftGlobal :: State GlobalState a -> Unif a
-liftGlobal st = do
-  s <- lift $ State.get
-  let !(a, s') = State.runState st s
-  lift $ State.put s'
-  pure a
-
-getMeta :: Var -> Unif (Maybe Term)
-getMeta v = liftLocal (State.gets (Map.lookup v))
-
-inspect :: Term -> Unif Term
-inspect (Term c ts) = pure (Term c ts)
-inspect (Var v) = do
-  mb <- getMeta v
-  case mb of
-    Nothing -> pure (Var v)
-    Just t  -> inspect t
-
-inspectDeep :: Term -> Unif Term
-inspectDeep t = do
-  t' <- inspect t
-  case t' of
-    Var v     -> pure (Var v)
-    Term c ts -> Term c <$> mapM inspectDeep ts
 
 occurs :: Var -> Term -> Unif Bool
 occurs v t = do
