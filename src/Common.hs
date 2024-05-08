@@ -1,15 +1,14 @@
 module Common
     ( Var, Term (..), Judgement
     , GlobalState, LocalState, Unif
-    , liftLocal, liftGlobal
-    , setMeta
+    , getMeta, newMeta, setMeta
     , inspect, inspectDeep
     ) where
 
 import Control.Monad.Trans (lift)
 
-import qualified Control.Monad.State.Strict as State
-import Control.Monad.State.Strict (StateT, State)
+import qualified Control.Monad.State.Lazy as State
+import Control.Monad.State.Lazy (StateT, State)
 
 import Control.Monad.Logic (LogicT)
 
@@ -19,6 +18,9 @@ import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 
 import Control.Monad.Logic (LogicT, msplit)
+
+import Control.Monad.Backtrack (Backtr)
+import Control.Monad.State.LocalGlobal (local, global)
 
 type Var = String
 data Term = Var Var
@@ -32,28 +34,20 @@ data LocalState = LocalState
   , metaCounter :: Int
   }
 
-type Backtr g s = StateT s (LogicT (State g))
 type Unif = Backtr GlobalState LocalState
 
-liftLocal :: State s a -> Backtr g s a
-liftLocal st = do
-  s <- State.get
-  let !(a, s') = State.runState st s
-  State.put s'
-  pure a
-
-liftGlobal :: State g a -> Backtr g s a
-liftGlobal st = do
-  s <- lift $ State.get
-  let !(a, s') = State.runState st s
-  lift $ State.put s'
-  pure a
-
 getMeta :: Var -> Unif (Maybe Term)
-getMeta v = liftLocal (State.gets (Map.lookup v . subst))
+getMeta v = local (State.gets (Map.lookup v . subst))
+
+newMeta :: String -> Unif Var
+newMeta pref = local $ State.state $ \(LocalState subst metaCounter) ->
+  let v = pref ++ show metaCounter in
+  if Map.member v subst
+  then error ("variable already assigned: " ++ v)
+  else (v, LocalState subst (metaCounter + 1))
 
 setMeta :: Var -> Term -> Unif ()
-setMeta v t = liftLocal $ State.modify $ \(LocalState subst metaCounter) ->
+setMeta v t = local $ State.modify $ \(LocalState subst metaCounter) ->
   if Map.member v subst
   then error ("variable already assigned: " ++ v)
   else LocalState (Map.insert v t subst) metaCounter
