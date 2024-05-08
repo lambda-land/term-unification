@@ -2,7 +2,7 @@ module Common
     ( Var, Term (..), Judgement
     , GlobalState, LocalState, Unif
     , liftLocal, liftGlobal
-    , setMeta
+    , getMeta, newMeta, setMeta
     , inspect, inspectDeep
     ) where
 
@@ -51,6 +51,13 @@ liftGlobal st = do
 
 getMeta :: Var -> Unif (Maybe Term)
 getMeta v = liftLocal (State.gets (Map.lookup v . subst))
+
+newMeta :: String -> Unif Var
+newMeta pref = liftLocal $ State.state $ \(LocalState subst metaCounter) ->
+  let v = pref ++ show metaCounter in
+  if Map.member v subst
+  then error ("variable already assigned: " ++ v)
+  else (v, LocalState subst (metaCounter + 1))
 
 setMeta :: Var -> Term -> Unif ()
 setMeta v t = liftLocal $ State.modify $ \(LocalState subst metaCounter) ->
