@@ -25,17 +25,22 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Unify
+    exposed-modules:  Unify, Rules
 
     -- Modules included in this library but not exported.
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    default-extensions:
+        PatternSynonyms
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base
+        base,
+        mtl,
+        containers,
+        logict,
+        logic
 
     -- Directories containing source files.
     hs-source-dirs:   src
