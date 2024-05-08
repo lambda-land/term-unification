@@ -28,9 +28,10 @@ library
     exposed-modules:
         Unify
         Rules
-        Control.Monad.Backtrack
         Common
-        
+        Control.Monad.Backtrack
+        Control.Monad.State.LocalGlobal
+
     -- Modules included in this library but not exported.
     -- other-modules:
 
