@@ -30,6 +30,7 @@ library
         Rules
         Common
         Control.Monad.Backtrack
+        Control.Monad.Yield
         Control.Monad.State.LocalGlobal
 
     -- Modules included in this library but not exported.
