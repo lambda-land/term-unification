@@ -13,7 +13,7 @@ import Control.Monad (forM_, guard)
 
 import Logic.Proof (Proof (..), pattern Proof)
 
-import Control.Monad.Backtrack (allResults)
+import Control.Monad.Backtrack (allResults,interleaveMany,choose)
 import Common
 import Rules (Rule (..), Rules, instantiate)
 
@@ -23,18 +23,18 @@ anyM p (x : xs) = do c <- p x
                      if c then pure True
                           else anyM p xs
 
-interleaveMany :: MonadLogic m => [m a] -> m a
-interleaveMany = step [] where
-  step []  []       = empty
-  step ts' []       = step [] (reverse ts')
-  step ts' (t : ts) = do
-    mb <- msplit t
-    case mb of
-      Nothing      ->            step       ts'  ts
-      Just (a, t') -> pure a <|> step (t' : ts') ts
+-- interleaveMany :: MonadLogic m => [m a] -> m a
+-- interleaveMany = step [] where
+--   step []  []       = empty
+--   step ts' []       = step [] (reverse ts')
+--   step ts' (t : ts) = do
+--     mb <- msplit t
+--     case mb of
+--       Nothing      ->            step       ts'  ts
+--       Just (a, t') -> pure a <|> step (t' : ts') ts
 
-choose :: MonadLogic m => [a] -> m a
-choose = interleaveMany . map pure
+-- choose :: MonadLogic m => [a] -> m a
+-- choose = interleaveMany . map pure
 
 occurs :: Var -> Term -> Unif Bool
 occurs v t = do
