@@ -120,10 +120,10 @@ m >>-- f = do
 
 
 (>>||) :: MonadLogic m => m a -> (a -> m b) -> m b
--- m >>|| f = vertical $ fmap f m
-m >>|| f = do
-  (a, m') <- msplitM m empty
-  f a <|> (m' >>|| f)
+m >>|| f = vertical $ fmap f m
+-- m >>|| f = do
+--   (a, m') <- msplitM m empty
+--   vertical (pure (f a) <|> pure (m' >>|| f))
 
 (>>*-) :: MonadLogic m => m a -> (a -> m b) -> m b
 a >>*- k = step [] [] (Just a) where
@@ -192,8 +192,8 @@ a >>*- k = step [] [] (Just a) where
 --               choose (take n ['A'..]) >>- \c ->
 --               return $ writeN (n, c))
 --              () ()
--- chooseN :: MonadLogic m => Int -> m (Int,Int)
--- chooseN n = choose (map (n,) [1..])
+chooseN :: MonadLogic m => Int -> m (Int,Int)
+chooseN n = choose (map (n,) [1..])
 
 -- mon1 :: Backtr () () Int
 -- mon1 = vertical $ fmap chooseN (choose [5,6,7])
