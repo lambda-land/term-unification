@@ -30,7 +30,7 @@ instance LocalGlobal (Backtr g s) g s where
   global :: State g a -> Backtr g s a
   global st = Backtr $ lift $ state $ runState st
   -- global = lift . lift 
-  -- global st = do
+  -- global st = backtr $ do
   --   g <- lift $ lift State.get
   --   let ~(a,g') = State.runState st g
   --   lift $ lift $ State.put g'
@@ -38,7 +38,7 @@ instance LocalGlobal (Backtr g s) g s where
 
   local :: State s a -> Backtr g s a
   local st = Backtr $ state $ runState st
-  -- local st = do
+  -- local st = backtr $ do
   --   s <- State.get
   --   let ~(a,s') = State.runState st s
   --   State.put s'
@@ -74,9 +74,13 @@ choose :: MonadLogic m => [a] -> m a
 choose = interleaveMany . map pure
 {-# INLINE choose #-}
 
+interSequence :: MonadLogic m => [m a] -> m [a]
+interSequence [] = pure []
+interSequence (m:ms) = m >>|| (\a -> interSequence ms >>|| \as -> pure (a:as))
+
 
 alternateMany :: MonadLogic m => [a] -> m a
-alternateMany = foldr (<|>) empty . map pure
+alternateMany = foldr interleave empty . map pure
 
 msplitM :: MonadLogic m => m a -> m a -> m (a, m a)
 msplitM m m0 = msplit m >>= maybe (msplit m0 >>= maybe empty pure) pure
@@ -97,11 +101,11 @@ horizontal mma = do
 
 -- transpose :: MonadLogic m => m (m a) -> m (m a)
 
--- roundRobin :: MonadLogic m => [m a] -> m a
--- roundRobin [] = empty
--- roundRobin (m:ms) = do
---   (a, m') <- msplitM m (roundRobin ms)
---   pure a <|> roundRobin (ms ++ [m'])
+roundRobin :: MonadLogic m => [m a] -> m a
+roundRobin [] = empty
+roundRobin (m:ms) = do
+  (a, m') <- msplitM m (roundRobin ms)
+  pure a <|> roundRobin (ms ++ [m'])
 
 
 -- same as >>=

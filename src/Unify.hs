@@ -4,7 +4,7 @@ module Unify
     , tes
     ) where
 
-import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.State as State
 
 import Control.Monad.Logic.Class (MonadLogic, msplit, (>>-))
 
@@ -13,9 +13,10 @@ import Control.Monad (forM_, guard)
 
 import Logic.Proof (Proof (..), pattern Proof)
 
-import Control.Monad.Backtrack (allResults,interleaveMany,choose)
+import Control.Monad.Backtrack (allResults,interleaveMany,choose,manyResults, (>>||), (>>*-), alternateMany, vertical, interSequence)
 import Common
 import Rules (Rule (..), Rules, instantiate)
+import GHC.IO (unsafePerformIO)
 
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ []       = pure False
@@ -95,9 +96,38 @@ search rules j =
   inspectDeep j                >>= \j' ->
   pure (Proof j' premiseTrees)
 
+search' :: Rules -> Judgement -> Unif (Proof Judgement)
+search' rs j = (unsafePerformIO $ print j) `seq` do
+  rule <- (alternateMany rs)
+  r <- instantiate (snd rule)
+  unify j (conclusion r)
+  premiseTrees <- (interSequence (map (search' rs) (premises r))) -- mapM (search' (rotate rs)) (premises r) -- (interSequence (map (search' rs) (premises r)))
+  j' <- inspectDeep j
+  pure (Proof j' premiseTrees)
+
 tes :: IO ()
 tes = print . map fst . fst $
   allResults (choose [5, 6, 7, 8] >>≠ \n ->
                          choose (take n ['A'..]) >>- \c ->
                          pure (n, c))
              () ()
+
+
+tesRS :: Rules
+tesRS = [("ru1", Rule (Term "friends" [Term "iain" [],Term "kassia" []]) []),
+         ("ru2", Rule (Term "friends" [Term "kassia" [],Term "grace" []]) []),
+         ("ru3", Rule (Term "friends" [Term "grace" [],Term "ron" []]) []),
+         ("ru4", Rule (Term "friends" [Term "ron" [],Term "kelli" []]) []),
+         ("ru4_", Rule (Term "friends" [Term "kelli" [],Term "grace" []]) []),
+        --  ("ru6", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]]),
+         ("ru5", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "X",Var "Z"],Term "friends" [Var "Z",Var "Y"]]),
+         ("ru6*", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]])
+
+         ]
+
+tesJ :: Judgement
+tesJ = Term "friends" [Term "iain" [],Term "kelli" []]
+
+tesP :: IO ()
+tesP = print . (\(as,g) -> map (\(a,s) -> (a,metaCounter s,g)) as) $
+  manyResults 1 (search' tesRS tesJ) emptyLocalState ()
