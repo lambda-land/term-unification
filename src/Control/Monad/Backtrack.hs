@@ -25,6 +25,7 @@ manyResults n bt s1 g1 = runState (observeManyT n (runStateT (unBacktr bt) s1)) 
 backtr :: StateT s (LogicT (State g)) a -> Backtr g s a
 backtr = Backtr
 
+
 instance LocalGlobal (Backtr g s) g s where
   global :: State g a -> Backtr g s a
   global st = Backtr $ lift $ state $ runState st
@@ -199,3 +200,4 @@ a >>*- k = step [] [] (Just a) where
 -- mon2 :: Backtr () () Int
 -- mon2 = (choose [5,6,7]) >>|| chooseN
 -- t = map fst $ fst $ manyResults 20 mon1 () ()
+
