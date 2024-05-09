@@ -3,6 +3,8 @@ module Common
     , GlobalState, LocalState, Unif
     , getMeta, newMeta, setMeta
     , inspect, inspectDeep
+    , emptyLocalState
+    , metaCounter
     ) where
 
 import Control.Monad.Trans (lift)
@@ -25,7 +27,7 @@ import Control.Monad.State.LocalGlobal (local, global)
 type Var = String
 data Term = Var Var
           | Term String [Term]
-
+          deriving (Eq, Show)
 type Judgement = Term
 
 type GlobalState = ()
@@ -33,6 +35,9 @@ data LocalState = LocalState
   { subst :: Map Var Term
   , metaCounter :: Int
   }
+
+emptyLocalState :: LocalState
+emptyLocalState = LocalState Map.empty 0
 
 type Unif = Backtr GlobalState LocalState
 
