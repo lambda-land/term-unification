@@ -119,7 +119,7 @@ tesRS = [("ru1", Rule (Term "friends" [Term "iain" [],Term "kassia" []]) []),
          ("ru3", Rule (Term "friends" [Term "grace" [],Term "ron" []]) []),
          ("ru4", Rule (Term "friends" [Term "ron" [],Term "kelli" []]) []),
          ("ru4_", Rule (Term "friends" [Term "kelli" [],Term "grace" []]) []),
-        --  ("ru6", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]]),
+         ("ru6", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]]),
          ("ru5", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "X",Var "Z"],Term "friends" [Var "Z",Var "Y"]]),
          ("ru6*", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]])
 
