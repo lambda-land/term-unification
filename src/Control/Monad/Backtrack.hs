@@ -93,7 +93,11 @@ choose = interleaveMany . map pure
 interSequence :: MonadLogic m => [m a] -> m [a]
 interSequence [] = pure []
 interSequence (m:ms) = m >>*- (\a -> interSequence ms >>*- \as -> pure (a:as))
+{-# INLINE interSequence #-}
 
+interMapM :: MonadLogic m => (a -> m b) -> [a] -> m [b]
+interMapM f = interSequence . fmap f
+{-# INLINE interMapM #-}
 
 alternateMany :: MonadLogic m => [a] -> m a
 alternateMany = foldr interleave empty . map pure

@@ -46,12 +46,12 @@ mapVars f (Term c ts) = Term c (map (mapVars f) ts)
 termNat :: Term -> Maybe Int
 termNat (Var _) = Nothing
 termNat (Lit "z") = Just 0
-termNat (Term "s" [t]) = (1 +) <$> termNat t
+termNat (Term "succ" [t]) = (1 +) <$> termNat t
 termNat _ = Nothing
 
 natTerm :: Int -> Term
 natTerm 0 = Lit "z"
-natTerm n | n > 0     = Term "s" [natTerm (n - 1)]
+natTerm n | n > 0     = Term "succ" [natTerm (n - 1)]
           | otherwise = error "natTerm: negative argument"
 
 termList :: Term -> Maybe [Term]
