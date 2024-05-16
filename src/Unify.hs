@@ -13,7 +13,7 @@ import Control.Monad (forM_, guard)
 
 import Logic.Proof (Proof (..), pattern Proof)
 
-import Control.Monad.Backtrack (allResults,interleaveMany,choose,manyResults, (>>||), (>>*-), alternateMany, vertical, interSequence, interMapM)
+import Control.Monad.Backtrack (allResults,interleaveMany,choose,manyResults, (>>||), (>>*-), alternateMany, vertical, interSequence, interMapM, chooseMapM)
 import Common
 import Term
 import Rules (Rule (..), Rules, instantiate)
@@ -91,8 +91,8 @@ search rules j =
    unify j (conclusion rule')  >>
    pure rule')
   -- bind with >>- because we want to try each matching rule in parallel
-                               >>= \rule' ->
-  interMapM (search rules) (premises rule')
+                               >>*- \rule' ->
+  chooseMapM (search rules) (premises rule')
                                >>= \premiseTrees ->
   inspectDeep j                >>= \j' ->
   pure (Proof j' premiseTrees)
@@ -125,15 +125,17 @@ tesRS = [
         --  ("ru5", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "X",Var "Z"],Term "friends" [Var "Z",Var "Y"]]),
         --  ("ru6*", Rule (Term "friends" [Var "X",Var "Y"]) [Term "friends" [Var "Y",Var "X"]]),
           ("lt_base", Rule (Term "lt" [Var "N",Term "succ" [Var "N"]]) [Term "nat" [Var "N"]]),
-          ("lt_step", Rule (Term "lt" [Var "N",Term "succ" [Var "M"]]) [Term "lt" [Var "N",Var "M"]]),
+          ("lt_succ", Rule (Term "lt" [Var "N",Term "succ" [Var "M"]]) [Term "lt" [Var "N",Var "M"]]),
+          ("lt_trans", Rule (Term "lt" [Var "N",Var "M"]) [Term "lt" [Var "N",Var "K"],Term "lt" [Var "K",Var "M"]]),
+
           ("nat_0", Rule (Term "nat" [Nat 0]) []),
           ("nat_succ", Rule (Term "nat" [Term "succ" [Var "N"]]) [Term "nat" [Var "N"]])
          ]
 
 tesJ :: Judgement
 -- tesJ = Term "friends" [Term "iain" [],Term "kelli" []]
--- tesJ = Term "lt" [Nat 5, Nat 20]
-tesJ = Term "lt" [Var "X", Term "succ" [Var "X"]]
+tesJ = Term "lt" [Nat 5, Nat 20]
+-- tesJ = Term "lt" [Var "X", Term "succ" [Var "X"]]
 tesP :: Int -> IO ()
 tesP n = print . (\(as,g) -> map (\(a,s) -> (a,metaCounter s,g)) as) $
   manyResults n (search tesRS tesJ) emptyLocalState ()
