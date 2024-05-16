@@ -7,26 +7,25 @@ import Control.Monad (forM)
 
 import qualified Data.Set as Set
 import Data.Set (Set)
-import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
+import qualified Data.Map as Map
+import Data.Map (Map)
+
+import Term
 
 import Common
+import Data.List (intercalate)
 
 data Rule = Rule
   { conclusion :: !Judgement
   , premises   :: ![Judgement]
   }
 
+instance Show Rule where
+  show (Rule c ps) = show c ++ " :- " ++ intercalate ", " (map show ps)
+
 type Rules = [( String -- name
               , Rule )]
 
-vars :: Term -> Set Var
-vars (Var v)     = Set.singleton v
-vars (Term _ ts) = Set.unions (map vars ts)
-
-mapVars :: (Var -> Var) -> Term -> Term
-mapVars f (Var v)     = Var (f v)
-mapVars f (Term c ts) = Term c (map (mapVars f) ts)
 
 instantiate :: Rule -> Unif Rule
 instantiate (Rule conclusion premises) = do

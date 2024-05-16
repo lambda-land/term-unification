@@ -29,6 +29,7 @@ library
         Unify
         Rules
         Common
+        Term
         Control.Monad.Backtrack
         Control.Monad.Yield
         Control.Monad.State.LocalGlobal

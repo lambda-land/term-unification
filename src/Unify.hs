@@ -15,6 +15,7 @@ import Logic.Proof (Proof (..), pattern Proof)
 
 import Control.Monad.Backtrack (allResults,interleaveMany,choose,manyResults, (>>||), (>>*-), alternateMany, vertical, interSequence)
 import Common
+import Term
 import Rules (Rule (..), Rules, instantiate)
 import GHC.IO (unsafePerformIO)
 
@@ -130,4 +131,4 @@ tesJ = Term "friends" [Term "iain" [],Term "kelli" []]
 
 tesP :: IO ()
 tesP = print . (\(as,g) -> map (\(a,s) -> (a,metaCounter s,g)) as) $
-  manyResults 1 (search' tesRS tesJ) emptyLocalState ()
+  manyResults 1 (search tesRS tesJ) emptyLocalState ()

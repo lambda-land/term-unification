@@ -1,5 +1,5 @@
 module Common
-    ( Var, Term (..), Judgement
+    ( Judgement
     , GlobalState, LocalState, Unif
     , getMeta, newMeta, setMeta
     , inspect, inspectDeep
@@ -24,10 +24,8 @@ import Control.Monad.Logic (LogicT, msplit)
 import Control.Monad.Backtrack (Backtr)
 import Control.Monad.State.LocalGlobal (local, global)
 
-type Var = String
-data Term = Var Var
-          | Term String [Term]
-          deriving (Eq, Show)
+import Term
+
 type Judgement = Term
 
 type GlobalState = ()
