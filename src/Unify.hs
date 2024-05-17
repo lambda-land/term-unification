@@ -9,7 +9,7 @@ import qualified Control.Monad.State as State
 import Control.Monad.Logic.Class (MonadLogic, msplit, (>>-))
 
 import Control.Applicative (empty, (<|>))
-import Control.Monad (forM_, guard)
+import Control.Monad (forM_, guard, msum)
 
 import Logic.Proof (Proof (..), pattern Proof)
 
@@ -97,14 +97,21 @@ search rules j =
   inspectDeep j                >>= \j' ->
   pure (Proof j' premiseTrees)
 
-search' :: Rules -> Judgement -> Unif (Proof Judgement)
-search' rs j = (unsafePerformIO $ print j) `seq` do
-  rule <- (alternateMany rs)
-  r <- instantiate (snd rule)
-  unify j (conclusion r)
-  premiseTrees <- (interSequence (map (search' rs) (premises r))) -- mapM (search' (rotate rs)) (premises r) -- (interSequence (map (search' rs) (premises r)))
-  j' <- inspectDeep j
+eachRule :: Rules -> Judgement -> Unif Rule
+eachRule rs j = do
+  (_,rule) <- choose rs -- msum (map pure rs)
+  rule' <- instantiate rule
+  unify j (conclusion rule')
+  pure rule'
+
+searchWithRule :: Rules -> Judgement -> Rule -> Unif (Proof Judgement)
+searchWithRule rs j rule = do
+  premiseTrees <- chooseMapM (search' rs) (premises rule)
+  j' <- inspectDeep j 
   pure (Proof j' premiseTrees)
+
+search' :: Rules -> Judgement -> Unif (Proof Judgement)
+search' rs j = eachRule rs j >>*- searchWithRule rs j
 
 tes :: IO ()
 tes = print . map fst . fst $
@@ -134,8 +141,8 @@ tesRS = [
 
 tesJ :: Judgement
 -- tesJ = Term "friends" [Term "iain" [],Term "kelli" []]
-tesJ = Term "lt" [Nat 5, Nat 20]
+tesJ = Term "lt" [Nat 1, Nat 4]
 -- tesJ = Term "lt" [Var "X", Term "succ" [Var "X"]]
 tesP :: Int -> IO ()
 tesP n = print . (\(as,g) -> map (\(a,s) -> (a,metaCounter s,g)) as) $
-  manyResults n (search tesRS tesJ) emptyLocalState ()
+  manyResults n (search' tesRS tesJ) emptyLocalState ()

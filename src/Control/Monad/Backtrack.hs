@@ -102,17 +102,8 @@ interMapM f = interSequence . fmap f
 
 chooseMapM :: MonadLogic m => (a -> m b) -> [a] -> m [b]
 chooseMapM _ [] = pure []
-chooseMapM f (a:as) = f a >>*- \b -> chooseMapM f as >>*- \bs -> pure (b:bs)
+chooseMapM f (a:as) = f a >>*- flip fmap (chooseMapM f as) . (:)
 {-# INLINE chooseMapM #-}
--- chooseMapM f as = step (map f as) [] []
---   where step [] _ [] = empty
---         step [] bs ms' = pure (reverse bs) <|> step (reverse ms') [] []
---         step (m:ms) bs ms' = do
---           x <- msplit m
---           case x of
---             Nothing -> empty -- step [] bs ms'
---             Just (b, m') -> step ms (b:bs) (m':ms')
---           -- step ms (b:bs) (m':ms')
 
 alternateMany :: MonadLogic m => [a] -> m a
 alternateMany = foldr interleave empty . map pure
@@ -165,6 +156,7 @@ m >>|| f = vertical $ fmap f m
 --   (a, m') <- msplitM m empty
 --   vertical (pure (f a) <|> pure (m' >>|| f))
 
+infixl 2 >>*-
 (>>*-) :: MonadLogic m => m a -> (a -> m b) -> m b
 a >>*- k = step [] [] (Just a) where
   -- step :: MonadLogic m => [m b] -> [m b] -> Maybe (m a) -> m b
